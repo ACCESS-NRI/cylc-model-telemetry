@@ -31,8 +31,11 @@ def main(argv: Optional[list[str]] = None) -> int:
     run_info = {k: v for k, v in vars(args).items() if v is not None}
     record_telemetry(run_info)
     # Telemetry is best-effort; never fail the suite task
-    #return 0
-    return 1 # For testing purposes
+    return 0
+
+    # For testing purposes - as telemetry is at the end of the suite,
+    # setting the job exit status to 1 would allow easy re-running of the job
+    # return 1 
 
 
 if __name__ == "__main__":
