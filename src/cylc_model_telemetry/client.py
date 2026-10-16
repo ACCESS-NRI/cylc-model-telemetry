@@ -1,6 +1,7 @@
 """Load telemetry configuration and post run telemetry for ACCESS-RAM3 suites."""
 
 from datetime import datetime, timezone
+import getpass
 import json
 import logging
 import os
@@ -110,24 +111,28 @@ def post_telemetry(
         raise TelemetryError(f"Status {response.status_code}: {body}")
 
 
-def record_telemetry(run_info: dict[str, Any]) -> None:
-    """Post run telemetry if configured.
-
-    Best-effort: failures are logged, never raised, so telemetry
-    problems cannot fail the suite task.
-    """
+def get_user() -> str:
+    """Get the current user's username.
+    If the username cannot be determined, returns an empty string."""
     try:
-        config = load_config()
-        if config is None:
-            logger.info("Telemetry not configured; skipping.")
-            return
-        payload = {
-            **run_info,
-            "timestamp":datetime.now(timezone.utc).isoformat(),
-            "hostname": config["hostname"],
-            "env_version": os.environ.get(TELEMETRY_ENV_VERSION_ENV),
-        }
-        post_telemetry(config, payload)
-        logger.info("Telemetry sent.")
-    except TelemetryError as e:
-        logger.warning("Telemetry failed: %s", e)
+        return getpass.getuser()
+    except Exception as e:
+        logger.warning("Failed to get current user: %s", e)
+        return ""
+
+
+def record_telemetry(run_info: dict[str, Any]) -> None:
+    """Post run telemetry if configured"""
+    config = load_config()
+    if config is None:
+        logger.info("Telemetry not configured; skipping.")
+        return
+    payload = {
+        **run_info,
+        "user": get_user(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "hostname": config["hostname"],
+        "env_version": os.environ.get(TELEMETRY_ENV_VERSION_ENV),
+    }
+    post_telemetry(config, payload)
+    logger.info("Telemetry sent.")
