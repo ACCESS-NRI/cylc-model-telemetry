@@ -4,26 +4,30 @@ A small client for sending model run telemetry from Cylc
 suites to the ACCESS-NRI tracking services.
 
 It is designed to run as the final task in a suite on the localhost
-(login/persistent session) and POST a JSON record of run information —
-user, model, suite name, build mode, spack version — to a telemetry ingestion endpoint.
+(login/persistent session) and POST a JSON record of run information
+(user, model, suite name, build mode, spack version) to a telemetry ingestion endpoint.
 
-Telemetry is **best-effort and opt-in**: if telemetry is not configured,
-or sending fails for any reason, the task logs a warning and exits
-successfully. Telemetry can never fail a suite run.
+Telemetry is **best-effort and opt-in** by default: if telemetry is not configured,
+or sending fails, the task logs a warning and exits successfully.
+With `--fail-on-error`, a missing required value or a failed send makes the task exit with status 1.
 
 ## How it works
 
-1. The suite's telemetry task invokes the `cylc-model-telemetry` command
-   with run information passed as CLI arguments.
-2. The client looks up the environment variable
+1. The suite's telemetry task invokes the `cylc-model-telemetry` command.
+   Run information is taken from command-line arguments, falling back to
+   environment variables.
+2. The CLI checks that the required values are set: suite name, Cylc version,
+   build mode, and spack version for spack builds. Missing values are logged
+   as errors and telemetry is not sent.
+3. The client looks up the environment variable
    `CYLC_MODEL_TELEMETRY_CONFIG_PATH`. If unset, telemetry is skipped.
-3. The external configuration file at that path (endpoint URL, token,
-   service name — see below) is loaded and validated against a JSON schema.
-4. The run information is POSTed to the configured endpoint.
+4. The external configuration file at that path (endpoint URL, token,
+   service name, see below) is loaded and validated against a JSON schema.
+5. The client adds the `user` (the username of the process), `timestamp`,
+   `hostname` and `env_version` fields, and POSTs the record to the configured endpoint.
 
-Run data is passed as CLI arguments and deployment details come from the environment variables. The configuration file is
-deployed separately from the package so that the endpoint URL and token
-can be updated or rotated without a new package release.
+The configuration file is deployed separately from the package so that the
+endpoint URL and token can be updated or rotated without a new package release.
 
 ## Installation
 
@@ -38,15 +42,24 @@ and `CYLC_MODEL_TELEMETRY_ENV_VERSION` set by the module/environment. #TODO: Upd
 ## Usage
 
 ```
-usage: cylc-model-telemetry [-h] --model MODEL --user USER --suite-name SUITE_NAME
+usage: cylc-model-telemetry [-h] [--model MODEL] [--suite-name SUITE_NAME]
                             [--cylc-version CYLC_VERSION]
                             [--build-mode BUILD_MODE]
                             [--spack-version SPACK_VERSION]
+                            [--fail-on-error]
 ```
 
-`--model` identifies which model produced the record (e.g. `access-ram3`)
-— all models share one telemetry service and are distinguished by this
-field.
+| Argument | Default | Required | Description |
+|---|---|---|---|
+| `--model` | `access-ram3` | no | Model that produced the record. All models share one telemetry service and are distinguished by this field. |
+| `--suite-name` | `$CYLC_SUITE_NAME` | yes | Suite name or ID |
+| `--cylc-version` | `$CYLC_VERSION` | yes | Cylc version |
+| `--build-mode` | `$BUILD_MODE` | yes | Build mode, e.g. `spack` |
+| `--spack-version` | `$SPACK_VERSION` | if build mode is `spack` | Spack model build version |
+| `--fail-on-error` | off | no | Exit with status 1 if a required value is missing or telemetry cannot be sent |
+
+Telemetry that is not configured (`CYLC_MODEL_TELEMETRY_CONFIG_PATH` unset) is
+always skipped without error.
 
 Example telemetry task in `flow.cylc` / `suite.rc`:
 
@@ -54,16 +67,14 @@ Example telemetry task in `flow.cylc` / `suite.rc`:
 [[record_telemetry]]
     inherit = HOST_LOCAL
     pre-script = module load cylc-model-telemetry
-    script = """
-        cylc-model-telemetry \
-            --model access-ram3 \
-            --user "$USER" \
-            --suite-name "$CYLC_SUITE_NAME" \
-            --cylc-version "$CYLC_VERSION" \
-            --build-mode "{{ BUILD_MODE }}"{% if BUILD_MODE == 'spack' %} \
-            --spack-version "{{ SPACK_VERSION }}"{% endif %}
-    """
+    script = "cylc-model-telemetry"
+    [[[environment]]]
+        BUILD_MODE="{{ BUILD_MODE }}"
+        SPACK_VERSION="{{ SPACK_VERSION }}"
 ```
+
+The suite name and Cylc version are read from `$CYLC_SUITE_NAME` and
+`$CYLC_VERSION`, which Cylc sets in the task environment.
 
 ## Configuration file
 
@@ -116,7 +127,8 @@ A deployment template is provided in
 ```
 
 `version` is the telemetry payload format version, used by the
-server-side parser.
+server-side parser. `user` is set by the client and is not trusted as an
+identity. The server should validate it.
 
 ## Development
 
