@@ -1,0 +1,46 @@
+name: Pytests
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_call:
+
+env:
+  PIP_UPLOADED_PRIOR_TO: P7D
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install .[test]
+
+      - name: Run tests
+        run: python -m pytest
+
+  codecov:
+    needs: pytest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install codecov
+        run: pip install codecov
+
+      - name: Upload coverage to codecov
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: codecov

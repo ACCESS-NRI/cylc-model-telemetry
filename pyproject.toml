@@ -5,6 +5,8 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "cylc-model-telemetry"
 description = "Send cylc suite run telemetry to ACCESS-NRI tracking services"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 dynamic = ["version"]
 requires-python = ">=3.11"
 dependencies = [
@@ -14,6 +16,9 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest", "requests-mock"]
+
+[project.urls]
+Repository = "https://github.com/ACCESS-NRI/cylc-model-telemetry"
 
 [project.scripts]
 cylc-model-telemetry = "cylc_model_telemetry.cli:main"
