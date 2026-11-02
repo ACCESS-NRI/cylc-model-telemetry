@@ -1,0 +1,8 @@
+{
+    "version": "1.0.0",
+    "telemetry_url": "{{ env['TELEMETRY_URL'] }}",
+    "telemetry_proxy_url": "{{ env['TELEMETRY_PROXY_URL'] }}",
+    "telemetry_token": "{{ env['TELEMETRY_TOKEN'] }}",
+    "telemetry_service_name": "cylc-model",
+    "hostname": "{{ env['TELEMETRY_HOSTNAME'] }}"
+}
