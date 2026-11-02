@@ -35,9 +35,14 @@ endpoint URL and token can be updated or rotated without a new package release.
 pip install cylc-model-telemetry
 ```
 
-On Gadi, the package will be installed in a conda environment under
-`/g/data/vk83/modules`, with `CYLC_MODEL_TELEMETRY_CONFIG_PATH`
-and `CYLC_MODEL_TELEMETRY_ENV_VERSION` set by the module/environment. #TODO: Update with exact deployment
+On Gadi, the package will be installed in a containerised python environment
+available using the module system with:
+```
+module use /g/data/vk83/modules
+module load cylc-model-telemetry
+```
+`CYLC_MODEL_TELEMETRY_CONFIG_PATH` and `CYLC_MODEL_TELEMETRY_ENV_VERSION` 
+are set in the installed module environment.
 
 ## Usage
 
@@ -51,11 +56,11 @@ usage: cylc-model-telemetry [-h] [--model MODEL] [--suite-name SUITE_NAME]
 
 | Argument | Default | Required | Description |
 |---|---|---|---|
-| `--model` | `access-ram3` | no | Model that produced the record. All models share one telemetry service and are distinguished by this field. |
 | `--suite-name` | `$CYLC_SUITE_NAME` | yes | Suite name or ID |
 | `--cylc-version` | `$CYLC_VERSION` | yes | Cylc version |
 | `--build-mode` | `$BUILD_MODE` | yes | Build mode, e.g. `spack` |
 | `--spack-version` | `$SPACK_VERSION` | if build mode is `spack` | Spack model build version |
+| `--model` | `access-ram3` | no | Model that produced the record. All models share one telemetry service and are distinguished by this field. |
 | `--fail-on-error` | off | no | Exit with status 1 if a required value is missing or telemetry cannot be sent |
 
 Telemetry that is not configured (`CYLC_MODEL_TELEMETRY_CONFIG_PATH` unset) is
