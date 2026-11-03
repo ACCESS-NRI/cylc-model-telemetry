@@ -36,7 +36,6 @@ jobs:
     with:
       pypi-package: false
       conda-package: true
-      dry-run: true # TODO: Remove after testing
     needs: test
     secrets: inherit
     permissions:
@@ -70,7 +69,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: create-github-release
     # Run this job if any of the previous jobs failed, or if the workflow was cancelled
-    # if: ${{ ( always() && failure() ) || cancelled() }} TODO: Uncomment after testings
+    if: ${{ ( always() && failure() ) || cancelled() }}
     permissions:
       contents: write
     env:
