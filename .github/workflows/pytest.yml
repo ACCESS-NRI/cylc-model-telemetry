@@ -32,7 +32,7 @@ jobs:
         run: python -m pytest
 
       - name: Upload coverage to Codecov
-        if: matrix.python-version == '3.13'
+        if: matrix.python-version == '3.14'
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 #7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
